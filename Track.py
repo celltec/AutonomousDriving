@@ -13,7 +13,6 @@ class Track:
         self.__starting_pos = tracks[track][0]
         self.__starting_angle = tracks[track][1]
         self.__window = window
-        self.__screen = window.screen
         self.__grass = pygame.image.load(os.path.join("pictures", "grass.jpg")).convert()
         self.__base_track = pygame.image.load(os.path.join("pictures", "track_" + str(track) + ".png"))
         self.__track = self.__base_track.copy()
@@ -21,17 +20,10 @@ class Track:
         self.__cursor_width = 80
         self.__cursor_overlay = pygame.Surface((self.__cursor_width * 2, self.__cursor_width * 2), pygame.SRCALPHA)
         self.__cursor_rect = self.__cursor_overlay.get_rect()
-        self.__space = pymunk.Space()
-        static = [
-            pymunk.Segment(self.__space.static_body, (-1, -1), (-1, window.height + 1), 0),
-            pymunk.Segment(self.__space.static_body, (-1, window.height + 1), (window.width + 1, window.height + 1), 0),
-            pymunk.Segment(self.__space.static_body, (window.width + 1, window.height + 1), (window.width + 1, -1), 0),
-            pymunk.Segment(self.__space.static_body, (-1, -1), (window.width + 1, -1), 0)
-        ]
-        self.__space.add(static)
-        self.generate()
-        self.__draw_options = pymunk.pygame_util.DrawOptions(self.__screen)
+        self.__enable_collisions = True
+        self.__draw_options = pymunk.pygame_util.DrawOptions(window.screen)
         pymunk.pygame_util.positive_y_is_up = False
+        self.generate()
 
     def edit(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -45,12 +37,12 @@ class Track:
         self.generate()
 
     def update(self):
-        self.__screen.blit(self.__grass, (0, 0))
-        self.__screen.blit(self.__track, (0, 0))
+        self.__window.screen.blit(self.__grass, (0, 0))
+        self.__window.screen.blit(self.__track, (0, 0))
         if pygame.key.get_pressed()[K_e]:
-            self.__screen.blit(self.__cursor_overlay, self.__cursor_rect)
-        if pygame.key.get_pressed()[K_d]:
-            self.__space.debug_draw(self.__draw_options)
+            self.__window.screen.blit(self.__cursor_overlay, self.__cursor_rect)
+        if pygame.key.get_pressed()[pygame.K_d]:
+            self.__window.space.debug_draw(self.__draw_options)
 
     def generate(self):
         def segment_func(v0, v1):
@@ -64,11 +56,10 @@ class Track:
             except:
                 return 0
 
-        self.__window.instant_message("Generating Track...", (1100, 200),
-                                      "white")
-        for s in self.__space.shapes:
+        self.__window.instant_message("Generating Track...", (1100, 200), "white")
+        for s in self.__window.space.shapes:
             if hasattr(s, "generated") and s.generated:
-                self.__space.remove(s)
+                self.__window.space.remove(s)
         line_set = pymunk.autogeometry.PolylineSet()
         pymunk.autogeometry.march_soft(
             BB(0, 0, self.__window.width - 1, self.__window.height - 1),
@@ -78,18 +69,29 @@ class Track:
             for i in range(len(line) - 1):
                 p1 = line[i]
                 p2 = line[i + 1]
-                shape = pymunk.Segment(self.__space.static_body, p1, p2, 0)
+                shape = pymunk.Segment(self.__window.space.static_body, p1, p2, 0)
                 shape.color = pygame.color.THECOLORS["black"]
                 shape.generated = True
-                self.__space.add(shape)
+                self.__window.space.add(shape)
+
+    def toggle_collisions(self):
+        self.__enable_collisions = not self.__enable_collisions
+
+    @property
+    def collision(self):
+        return self.__enable_collisions
+
+    @property
+    def window(self):
+        return self.__window
 
     @property
     def screen(self):
-        return self.__screen
+        return self.__window.screen
 
     @property
     def space(self):
-        return self.__space
+        return self.__window.space
 
     @property
     def starting_pos(self):

@@ -14,7 +14,7 @@ from Car import Car
 def main():
     window = Window()
     track = Track(window)
-    cars = [Car(track, "yellow", False)]
+    cars = [Car(track, "yellow", enable_ai=False)]
 
     running = True
     while running:
@@ -32,8 +32,10 @@ def main():
                     cars.append(Car(track))
                 if event.key == K_f:
                     cars[0].toggle_ai()
-                if event.key == K_t:
+                if event.key == K_h:
                     window.toggle_help()
+                if event.key == K_c:
+                    track.toggle_collisions()
             if event.type == KEYUP:
                 if event.key == K_e:
                     track.generate()
@@ -53,8 +55,6 @@ def main():
                 cars[0].accelerate()
             if pygame.key.get_pressed()[K_DOWN]:
                 cars[0].reverse()
-            if pygame.key.get_pressed()[K_SPACE]:
-                cars[0].stop()
 
         for car in cars:
             car.drive()
